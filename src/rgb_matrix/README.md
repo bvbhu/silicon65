@@ -1,232 +1,93 @@
-# RGB Matrix 功能说明
+# RGB Matrix — Silicon65
 
-使用自定义 RGB 控制器（`controller/`）取代 ZMK 内置 `rgb_underglow`，复刻 QMK RGB Matrix 功能。监听 `&rgb_ug` 键码实现灯光控制，按下 shift 可反向控制。
+使用自定义 RGB 控制器（`controller/`）取代 ZMK 内置 `rgb_underglow`，复刻 QMK RGB Matrix 功能。
+监听 `&rgb_ug` 键码实现灯光控制，按下 Shift 可反向调整。
 
-理论支持全部 QMK RGB Matrix 灯效，通过键码 `RGB_EFF` / `RGB_EFR` 循环切换。
-亮度范围 **0-225**（0%\~88%），以 **33ms** 间隔刷新。
-反应式灯效和帧缓冲灯效理论可用，但072RAM不够，未测试。
-基于[qmk\_firmware](https://github.com/qmk/qmk_firmware/tree/master/quantum/rgb_matrix) ，实现了对zmk的适配。
+## 功能介绍
 
-## 配置说明
+- 支持 QMK RGB Matrix 灯效体系，通过 `RGB_EFF` / `RGB_EFR` 键码循环切换
+- 亮度范围 0–225，刷新间隔 33ms
+- 配置状态（灯效模式、HSV、速度、开关）通过 ZMK Settings 持久化到 flash
+- 空闲/断开 USB 时可自动关闭灯效（由 Kconfig 控制）
 
-- [keymap.c](keymap.c) — 填写 `g_led_config`，实现 `rgb_matrix_indicators_advanced_user` 自定义指示灯（如需）。可以直接从qmk迁移，无需修改
-- [config.h](config.h) — 矩阵行列数、LED 总数、中心坐标、默认颜色/速度、启用灯效列表等
+## 硬件参数
 
-## 持久化
+| 参数     | 值                       |
+| ------ | ----------------------- |
+| 主控     | nRF52840 (nrfmicro\_13) |
+| LED 驱动 | `worldsemi,ws2812-spi`  |
+| LED 总数 | 69                      |
+| 矩阵     | 5 行 × 15 列              |
+| 中心坐标   | {112, 32}               |
+| 最大亮度   | 225                     |
+| 刷新间隔   | 33ms                    |
+| 分体键盘   | 否                       |
 
-RGB Matrix 状态（灯效模式、HSV、速度、开关状态）通过 ZMK Settings 子系统写入到 flash：
+## 配置项
 
-- 板级 defconfig：`CONFIG_SETTINGS=y` + `CONFIG_NVS=y`
-- 板级 .dts：chosen 节点声明 `zephyr,settings-storage`
-- 配置变更后延迟 60s 写入 flash
+### config.h
 
-## 自动关闭RGB
+| 宏                               | 值                             | 说明        |
+| ------------------------------- | ----------------------------- | --------- |
+| `MATRIX_ROWS`                   | 5                             | 矩阵行数      |
+| `MATRIX_COLS`                   | 15                            | 矩阵列数      |
+| `RGB_MATRIX_LED_COUNT`          | 69                            | LED 总数    |
+| `RGB_MATRIX_CENTER`             | {112, 32}                     | 灯效中心坐标    |
+| `RGB_MATRIX_LED_FLUSH_LIMIT`    | 33                            | 刷新间隔 (ms) |
+| `RGB_MATRIX_HUE_STEP`           | 8                             | 色相步进      |
+| `RGB_MATRIX_SAT_STEP`           | 16                            | 饱和度步进     |
+| `RGB_MATRIX_VAL_STEP`           | 16                            | 明度步进      |
+| `RGB_MATRIX_SPD_STEP`           | 16                            | 速度步进      |
+| `RGB_MATRIX_MAXIMUM_BRIGHTNESS` | 225                           | 最大亮度上限    |
+| `RGB_MATRIX_DEFAULT_HSV`        | 170, 255, 200                 | 默认颜色      |
+| `RGB_MATRIX_DEFAULT_SPD`        | 127                           | 默认速度      |
+| `RGB_MATRIX_DEFAULT_ON`         | true                          | 开机默认开启    |
+| `RGB_MATRIX_DEFAULT_MODE`       | `RGB_MATRIX_CYCLE_LEFT_RIGHT` | 默认灯效      |
 
-由 ZMK Kconfig 配置项控制（默认关闭）：
+**启用的灯效（全部开启）：**
 
-- `CONFIG_ZMK_RGB_UNDERGLOW_AUTO_OFF_IDLE` — 键盘空闲时关闭灯效
-- `CONFIG_ZMK_RGB_UNDERGLOW_AUTO_OFF_USB` — 断开 USB（电池供电）时关闭灯效
+- `ALPHAS_MODS`、`GRADIENT_UP_DOWN`、`GRADIENT_LEFT_RIGHT`、`BREATHING`、`BAND_SAT/VAL`、`BAND_PINWHEEL_SAT/VAL`、`BAND_SPIRAL_SAT/VAL`、`CYCLE_ALL`、`CYCLE_LEFT_RIGHT`、`CYCLE_UP_DOWN`、`RAINBOW_MOVING_CHEVRON`、`CYCLE_OUT_IN`、`CYCLE_OUT_IN_DUAL`、`CYCLE_PINWHEEL`、`CYCLE_SPIRAL`、`DUAL_BEACON`、`RAINBOW_BEACON`、`RAINBOW_PINWHEELS`、`FLOWER_BLOOMING`、`RAINDROPS`、`JELLYBEAN_RAINDROPS`、`HUE_BREATHING`、`HUE_PENDULUM`、`HUE_WAVE`、`PIXEL_RAIN`、`PIXEL_FLOW`、`PIXEL_FRACTAL`、`STARLIGHT` 系列、`RIVERFLOW`
+- `SOLID_REACTIVE_SIMPLE`、`SOLID_REACTIVE`、`SOLID_REACTIVE_WIDE`、`SOLID_REACTIVE_MULTIWIDE`、`SOLID_REACTIVE_CROSS`、`SOLID_REACTIVE_MULTICROSS`、`SOLID_REACTIVE_NEXUS`、`SOLID_REACTIVE_MULTINEXUS`、`SPLASH`、`MULTISPLASH`、`SOLID_SPLASH`、`SOLID_MULTISPLASH`
+- `TYPING_HEATMAP`、`DIGITAL_RAIN`
 
-## 反应式/帧缓冲灯效与按键事件
+### keymap.c
 
-反应式灯效（`SOLID_REACTIVE_*`、`SPLASH` 系列）和帧缓冲灯效（`TYPING_HEATMAP`、`DIGITAL_RAIN`）需要按键事件驱动。本移植已实现完整的按键事件接入链路，但需要**position → (row, col) 转换**。优先使用用户自定义转换表，如没有尝试通过设备树生成。
+- `g_led_config` — LED 灯珠布局，共 69 颗 LED，格式与 QMK 完全兼容
+- `rgb_matrix_indicators_advanced_user` — 未实现（已注释）
 
-### RAM 注意事项
+### silicon65.conf
 
-反应式和帧缓冲灯效会常驻分配额外 BSS（与开机默认灯效无关）：
+| 配置                                       | 状态     | 说明                 |
+| ---------------------------------------- | ------ | ------------------ |
+| `CONFIG_ZMK_RGB_UNDERGLOW`               | n (注释) | 由自定义 RGB Matrix 替代 |
+| `CONFIG_WS2812_STRIP`                    | y      | WS2812 SPI 驱动      |
+| `CONFIG_SETTINGS`                        | y      | 持久化设置              |
+| `CONFIG_NVS`                             | y      | NVS 存储后端           |
+| `CONFIG_FLASH`                           | y      | Flash 支持           |
+| `CONFIG_FLASH_PAGE_LAYOUT`               | y      | Flash 页布局          |
+| `CONFIG_ZMK_HID_INDICATORS`              | y      | Caps/Num/Scroll 检测 |
+| `CONFIG_ZMK_RGB_UNDERGLOW_AUTO_OFF_IDLE` | y      | 空闲自动关灯             |
+| `CONFIG_ZMK_EXT_POWER`                   | y      | 外部电源控制             |
 
-| 灯效类型 | 触发宏                              | 常驻 BSS                                   | 大小（本键盘） |
-| ---- | -------------------------------- | ---------------------------------------- | ------- |
-| 反应式  | `RGB_MATRIX_KEYREACTIVE_ENABLED` | `g_last_hit_tracker` + `last_hit_buffer` | \~82 B  |
-| 帧缓冲  | `RGB_MATRIX_FRAMEBUFFER_EFFECTS` | `g_rgb_frame_buffer[6][16]`              | 96 B    |
-| 合计   | <br />                           | <br />                                   | \~178 B |
+### silicon65.overlay
 
-在 SRAM 紧张的键盘上（如 STM32F072 16KB），启用这些灯效可能导致 `.bss` 越界或工作队列栈溢出（HardFault），表现为刷入固件后键盘无法识别。请先核算 RAM 余量，必要时调大 `CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE`。
+chosen 节点已添加 `zephyr,settings-storage = &storage_partition;`，引用 nrfmicro\_13 板级自带的 flash 分区。
 
-***
-
-# RGB Matrix 移植指南
-
-将 `src/rgb_matrix` 移植到其他 ZMK 键盘需要以下步骤，AI 生成仅供参考。
-
-## 1. 复制文件
+## 文件结构
 
 ```
-项目根目录/
-├── src/rgb_matrix/           # 复制整个目录
-│   ├── config.h              # 键盘硬件配置（按需修改）
-│   ├── keymap.c              # led_config + 指示灯（按需修改）
-│   ├── controller/           # RGB 控制器核心（无需修改）
-│   └── animations/           # 灯效文件（无需修改）
-├── drivers/
-│   └── led_strip/
-│       └── ws2812_gpio_stm32.c   # STM32 WS2812 GPIO 驱动（非 STM32 可跳过）
-└── CMakeLists.txt            # 添加源文件和头文件路径（见第 2 步）
+src/rgb_matrix/
+├── config.h              # 硬件参数与灯效配置
+├── keymap.c              # LED 灯珠布局
+├── controller/           # RGB 控制器核心（无需修改）
+│   ├── rgb_matrix.c / .h
+│   ├── rgb_matrix_settings.c / .h
+│   ├── rgb_matrix_types.h
+│   ├── qmk_compat.c / .h
+│   ├── post_config.h
+│   └── lib8tion.c / .h
+└── animations/           # 灯效算法（无需修改）
+    ├── runners/          # 灯效运行器
+    └── *.h               # 各灯效实现
 ```
 
-## 2. 修改 CMakeLists.txt
-
-在 ZMK 项目的 `CMakeLists.txt` 中添加以下内容：
-
-```cmake
-# ---- QMK rgb_matrix 灯效移植 ----
-target_sources(app PRIVATE
-  src/rgb_matrix/controller/rgb_matrix.c
-  src/rgb_matrix/controller/rgb_matrix_settings.c
-  src/rgb_matrix/controller/qmk_compat.c
-  src/rgb_matrix/controller/lib8tion.c
-  src/rgb_matrix/keymap.c
-)
-
-target_include_directories(app PRIVATE
-  src/rgb_matrix
-  src/rgb_matrix/controller
-  src/rgb_matrix/animations
-  src/rgb_matrix/animations/runners
-)
-
-# 自定义 WS2812 GPIO STM32 驱动（仅 STM32 + GPIO bit-bang 需要）
-if (CONFIG_WS2812_GPIO_STM32)
-  target_sources(drivers__led_strip PRIVATE drivers/led_strip/ws2812_gpio_stm32.c)
-endif()
-```
-
-如果是**分体键盘**，建议包裹条件编译（仅 central 执行渲染）：
-
-```cmake
-if ((NOT CONFIG_ZMK_SPLIT) OR CONFIG_ZMK_SPLIT_ROLE_CENTRAL)
-  # 上述 target_sources / target_include_directories 放在此处
-endif()
-```
-
-## 3. 修改 Board 设备树 (.dts)
-
-**① 添加 chosen 节点**
-
-在 `/chosen` 中添加 `zmk,underglow`：
-
-```dts
-chosen {
-    zephyr,sram = &sram0;
-    zephyr,flash = &flash0;
-    zephyr,settings-storage = &storage_partition;  /* 持久化必需 */
-    zmk,kscan = &kscan0;
-    zmk,matrix_transform = &default_transform;
-    zmk,underglow = &led_strip;                     /* RGB Matrix 从该节点获取 LED 设备 */
-};
-```
-
-**② 添加 LED strip 设备节点**
-
-- **STM32（使用自定义 GPIO 驱动）**：
-
-```dts
-led_strip: ws2812 {
-    compatible = "bvbhu,ws2812-gpio-stm32";
-    chain-length = <96>;            /* LED 总数 */
-    gpios = <&gpiob 12 GPIO_ACTIVE_HIGH>;
-    color-mapping = <LED_COLOR_ID_GREEN
-                     LED_COLOR_ID_RED
-                     LED_COLOR_ID_BLUE>;
-    reset-delay = <50>;
-};
-```
-
-> `compatible` 字段串 `bvbhu,ws2812-gpio-stm32` 对应 `drivers/led_strip/ws2812_gpio_stm32.c` 中的 `DT_DRV_COMPAT`。需在 `dts/bindings/` 中提供对应的绑定文件（或参考该驱动自行添加）。
->
-> **驱动缓冲区行为**：本驱动的 `update_rgb` 在 bit-bang 时直接按 `color-mapping` 顺序从 `pixels` 读取并发送，**不修改源缓冲区**。这保证了 raindrops、starlight 等非全帧重绘灯效的正确性（它们依赖缓冲区跨帧保留数据）。若使用其他 WS2812 驱动，请确保其 `update_rgb` 同样不修改传入的 `pixels` 缓冲区。
-
-- **NRF（使用 Zephyr 内置 SPI/GPIO 驱动）**：使用 ZMK 原有的 `zmk,underglow` 灯带配置即可，`compatible` 通常为 `worldsemi,ws2812-spi` 或 `worldsemi,ws2812-gpio`。
-
-**③ 添加 flash 分区（持久化必需）**
-
-在 `&flash0` 中添加 `storage_partition`，用于保存 RGB 配置：
-
-```dts
-&flash0 {
-    partitions {
-        compatible = "fixed-partitions";
-        #address-cells = <1>;
-        #size-cells = <1>;
-
-        storage_partition: partition@1e800 {
-            label = "storage";
-            reg = <0x0001e800 DT_SIZE_K(6)>;
-        };
-    };
-};
-```
-
-分区位置和大小需根据芯片 flash 总大小调整，确保不覆盖固件区域。
-
-## 4. 修改 Board defconfig
-
-在 `boards/<厂商>/<键盘>/<键盘>_defconfig` 中添加以下配置：
-
-```kconfig
-# 禁用 ZMK 内置 RGB Underglow（由自定义 RGB Matrix 取代）
-# CONFIG_ZMK_RGB_UNDERGLOW is not set
-
-# WS2812 GPIO 驱动（STM32 GPIO bit-bang）
-CONFIG_WS2812_GPIO_STM32=y
-
-# HID 指示灯支持（Caps/Num/Scroll Lock 检测）
-CONFIG_ZMK_HID_INDICATORS=y
-
-# 持久化存储（RGB 设置保存到 flash）
-CONFIG_SETTINGS=y
-CONFIG_NVS=y
-CONFIG_FLASH=y
-CONFIG_FLASH_PAGE_LAYOUT=y
-
-# （可选）调整栈大小——RGB Matrix 使用工作队列执行渲染
-# CONFIG_MAIN_STACK_SIZE=512
-# CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE=768
-```
-
-## 5. 修改 keymap.c
-
-将 `src/rgb_matrix/keymap.c` 中的 `g_led_config` 替换为键盘实际的灯珠布局：
-
-- `matrix_co[MATRIX_ROWS][MATRIX_COLS]` — 矩阵坐标到 LED 索引的映射，`NO_LED(255)` 表示该位置无 LED
-- `point[RGB_MATRIX_LED_COUNT]` — 每颗 LED 的物理坐标 `{ x, y }`，范围 0\~255
-- `flags[RGB_MATRIX_LED_COUNT]` — 每颗 LED 的标签（`LED_FLAG_KEYLIGHT`、`LED_FLAG_UNDERGLOW` 等）
-
-`g_led_config` 可直接从 QMK 的 `led_config_t` 复制粘贴，格式完全兼容。
-
-`rgb_matrix_indicators_advanced_user` 函数可自定义指示灯逻辑（如 CapsLock、NumLock、Shift 等指示）。
-
-## 6. 修改 config.h
-
-在 `src/rgb_matrix/config.h` 中配置键盘硬件参数：
-
-| 宏                               | 说明                | 必填 |
-| ------------------------------- | ----------------- | -- |
-| `MATRIX_ROWS`                   | 矩阵行数              | 是  |
-| `MATRIX_COLS`                   | 矩阵列数              | 是  |
-| `RGB_MATRIX_LED_COUNT`          | 灯珠总数              | 是  |
-| `RGB_MATRIX_CENTER`             | 灯效中心坐标 `{ x, y }` | 推荐 |
-| `RGB_MATRIX_MAXIMUM_BRIGHTNESS` | 最大亮度上限            | 可选 |
-| `RGB_MATRIX_DEFAULT_MODE`       | 开机默认灯效模式          | 可选 |
-| `RGB_MATRIX_DEFAULT_HSV`        | 开机默认颜色            | 可选 |
-| `RGB_MATRIX_DEFAULT_SPD`        | 开机默认速度            | 可选 |
-| `RGB_MATRIX_LED_FLUSH_LIMIT`    | LED 刷新间隔（毫秒）      | 可选 |
-| `ENABLE_RGB_MATRIX_xxx`         | 启用的灯效（按需定义）       | 可选 |
-
-`RGB_MATRIX_CENTER` 参考坐标计算：`x = 255 * 物理列号 / (总列数 - 1)`，`y = 255 * 物理行号 / (总行数 - 1)`。
-
-**分体键盘**：取消注释 `RGB_MATRIX_SPLIT` 和 `RGB_MATRIX_IS_LEFT`。
-
-## 7. 键码绑定
-
-该 RGB Matrix 控制器监听 `&rgb_ug` 键码。在 keymap 中使用标准的 `&rgb_ug RGB_TOG`、`&rgb_ug RGB_EFF` 等键码控制灯光。
-
-`&rgb_ug` 是 ZMK 内置的 RGB Underglow 行为节点，无需额外定义。按下 Shift 同时操作可反向调整（例如 `Shift + RGB_HUI` = 色相减少）。
-
-## 8. 常见问题
-
-**Q: 分体键盘如何配置？**
-A: 在 `config.h` 中将源文件/头文件包裹在 `if ((NOT CONFIG_ZMK_SPLIT) OR CONFIG_ZMK_SPLIT_ROLE_CENTRAL)` 条件中（仅 central 端运行渲染），并定义 `RGB_MATRIX_SPLIT { 左半LED数, 右半LED数 }`。
-
-**Q: RAM 不足怎么办？**
-A: 减少启用的灯效数量（注释掉 `config.h` 中不必要的 `ENABLE_RGB_MATRIX_xxx`），尤其是反应式和帧缓冲灯效——它们会常驻分配约 178B BSS（详见上文「反应式/帧缓冲灯效与按键事件」一节）。在 defconfig 中可以缩减 `MAIN_STACK_SIZE` 和 `SYSTEM_WORKQUEUE_STACK_SIZE`，但注意避免栈溢出导致内存损坏（HardFault）。
