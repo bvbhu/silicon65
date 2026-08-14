@@ -1,8 +1,0 @@
-file_format: "1"
-id: silicon65
-name: silicon65
-type: shield
-url:
-requires: [nrfmicro_13_52840]
-features:
-  - keys

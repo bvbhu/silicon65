@@ -1,9 +1,0 @@
-# Copyright (c) 2020 The ZMK Contributors
-# SPDX-License-Identifier: MIT
-
-if SHIELD_SILICON65
-
-config ZMK_KEYBOARD_NAME
-	default "silicon65"
-
-endif
