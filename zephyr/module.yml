@@ -4,7 +4,6 @@
 name: zmk-keyboard-silicon65
 build:
   cmake: .
-  kconfig: .
   settings:
     board_root: .
     dts_root: .
