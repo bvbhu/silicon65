@@ -30,13 +30,8 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 
-#if defined(CONFIG_ZMK_RGB_UNDERGLOW_AUTO_OFF_IDLE)
-#	include <zmk/activity.h>
-#endif
-
-#if defined(CONFIG_ZMK_RGB_UNDERGLOW_AUTO_OFF_USB)
-#	include <zmk/usb.h>
-#endif
+#include <zmk/activity.h>
+#include <zmk/usb.h>
 
 LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 
@@ -464,12 +459,8 @@ void rgb_matrix_task(void)
 	// Ideally we would also stop sending zeros to the LED driver PWM buffers
 	// while suspended and just do a software shutdown. This is a cheap hack for now.
 	bool suspend_backlight = suspend_state ||
-#if defined(CONFIG_ZMK_RGB_UNDERGLOW_AUTO_OFF_IDLE)
 							 (zmk_activity_get_state() == ZMK_ACTIVITY_STATE_IDLE) ||
-#endif
-#if defined(CONFIG_ZMK_RGB_UNDERGLOW_AUTO_OFF_USB)
 							 (!zmk_usb_is_powered()) ||
-#endif
 							 false;
 
 	uint8_t effect = suspend_backlight || !rgb_matrix_config.enable ? 0 : rgb_matrix_config.mode;
