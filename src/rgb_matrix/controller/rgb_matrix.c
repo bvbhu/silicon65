@@ -459,9 +459,7 @@ void rgb_matrix_task(void)
 	// Ideally we would also stop sending zeros to the LED driver PWM buffers
 	// while suspended and just do a software shutdown. This is a cheap hack for now.
 	bool suspend_backlight = suspend_state ||
-							 (zmk_activity_get_state() == ZMK_ACTIVITY_IDLE) ||
-							 (!zmk_usb_is_powered()) ||
-							 false;
+							 (zmk_activity_get_state() == ZMK_ACTIVITY_IDLE);
 
 	uint8_t effect = suspend_backlight || !rgb_matrix_config.enable ? 0 : rgb_matrix_config.mode;
 
@@ -566,7 +564,8 @@ void rgb_matrix_init(void)
 #endif // RGB_MATRIX_KEYREACTIVE_ENABLED
 }
 
-/* ===== 控制器入口：定时调度 + SYS_INIT ===== */
+/* ===== 定时调度：条件选择系统 workqueue 或独立 workqueue ===== */
+/* 在 config.h 中定义 RGB_WORKQ_STACK_SIZE > 0 启用独立 workqueue。 */
 
 /* rgb_tick_handler - periodic rgb_matrix_task dispatch */
 static void rgb_tick_handler(struct k_work* work)
@@ -577,10 +576,20 @@ static void rgb_tick_handler(struct k_work* work)
 
 K_WORK_DEFINE(rgb_tick_work, rgb_tick_handler);
 
+#if defined(RGB_WORKQ_STACK_SIZE) && RGB_WORKQ_STACK_SIZE > 0
+#define RGB_WORKQ_PRIORITY (CONFIG_MAIN_THREAD_PRIORITY + 1)
+static struct k_work_q rgb_work_q;
+K_THREAD_STACK_DEFINE(rgb_work_q_stack, RGB_WORKQ_STACK_SIZE);
+#endif
+
 static void rgb_timer_handler(struct k_timer* timer)
 {
 	(void)timer;
-	k_work_submit(&rgb_tick_work);
+#if defined(RGB_WORKQ_STACK_SIZE) && RGB_WORKQ_STACK_SIZE > 0
+	k_work_submit_to_queue(&rgb_work_q, &rgb_tick_work); /* 独立 workqueue */
+#else
+	k_work_submit(&rgb_tick_work);			 /* 系统 workqueue（省 RAM） */
+#endif
 }
 
 K_TIMER_DEFINE(rgb_timer, rgb_timer_handler, NULL);
@@ -590,7 +599,11 @@ int rgb_matrix_controller_init(void)
 {
 	rgb_matrix_settings_init();
 	rgb_matrix_init();
-	k_timer_start(&rgb_timer, K_MSEC(10), K_MSEC(10));
+#if defined(RGB_WORKQ_STACK_SIZE) && RGB_WORKQ_STACK_SIZE > 0
+	k_work_q_start(&rgb_work_q, rgb_work_q_stack,
+				   K_THREAD_STACK_SIZEOF(rgb_work_q_stack), RGB_WORKQ_PRIORITY);
+#endif
+	k_timer_start(&rgb_timer, K_MSEC(RGB_MATRIX_LED_FLUSH_LIMIT), K_MSEC(RGB_MATRIX_LED_FLUSH_LIMIT));
 	LOG_INF("RGB matrix controller initialized");
 	return 0;
 }

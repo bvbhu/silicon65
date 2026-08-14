@@ -4,6 +4,6 @@
 if SHIELD_SILICON65
 
 config ZMK_KEYBOARD_NAME
-	default "silicon65"
+	default "Silicon65-X"
 
 endif

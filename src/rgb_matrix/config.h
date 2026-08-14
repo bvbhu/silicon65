@@ -43,6 +43,11 @@
  *  可选值: 1 ~ 100（毫秒） */
 #define RGB_MATRIX_LED_FLUSH_LIMIT 33
 
+/** @brief RGB 独立 workqueue 栈大小（字节）
+ *  定义 > 0 使用独立 workqueue（不阻塞按键），值即线程栈大小。
+ *  不定义或为 0 则使用系统 workqueue（省 RAM）。 */
+#define RGB_WORKQ_STACK_SIZE 1024 
+
 /** @brief LED 坐标系中心点
  *  用于对称灯效（如 Cycle Left-Right）的中心参考坐标。
  *  可选值: { x, y }，x/y 范围 0~255 */

@@ -73,7 +73,8 @@ static int rgb_matrix_settings_set(const char* name, size_t len, settings_read_c
 static int rgb_matrix_settings_commit(void)
 {
 	/* settings_load() 完成后调用，若未加载到有效配置则写入默认值 */
-	if(!settings_loaded || !rgb_matrix_config.mode)
+	if(!settings_loaded || !rgb_matrix_config.mode ||
+	   rgb_matrix_config.mode >= RGB_MATRIX_EFFECT_MAX)
 	{
 		eeconfig_update_rgb_matrix_default();
 	}
