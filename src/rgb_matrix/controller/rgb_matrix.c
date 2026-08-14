@@ -459,7 +459,7 @@ void rgb_matrix_task(void)
 	// Ideally we would also stop sending zeros to the LED driver PWM buffers
 	// while suspended and just do a software shutdown. This is a cheap hack for now.
 	bool suspend_backlight = suspend_state ||
-							 (zmk_activity_get_state() == ZMK_ACTIVITY_STATE_IDLE) ||
+							 (zmk_activity_get_state() == ZMK_ACTIVITY_IDLE) ||
 							 (!zmk_usb_is_powered()) ||
 							 false;
 
