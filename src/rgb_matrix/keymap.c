@@ -42,7 +42,32 @@ led_config_t g_led_config =
     }
 };
 // clang-format on
-// bool rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max)
-// {
-// 	return true;
-// }
+bool rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max)
+{
+	if(host_keyboard_led_state().caps_lock)
+	{ // CapsLock锁定时强制25号LED的颜色
+		RGB_MATRIX_INDICATOR_SET_COLOR(25, 185, 0, 0);
+	}
+	// else
+	// { // CapsLock解锁时强制25号LED的颜色
+	// }
+
+	// if(host_keyboard_led_state().num_lock)
+	// { // NumLock锁定时强制45号LED的颜色
+	// }
+	// else
+	// { // NumLock解锁时强制45号LED的颜色
+	// 	RGB_MATRIX_INDICATOR_SET_COLOR(45, 185, 0, 0);
+	// }
+
+	// switch(get_highest_layer(layer_state))
+	// {
+	// 	case 0:
+	// 		break;
+	// 	case 1:
+	// 		break;
+	// 	default:
+	// 		break;
+	// }
+	return false;
+}
