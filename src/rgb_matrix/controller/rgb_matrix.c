@@ -131,44 +131,18 @@ const uint8_t k_rgb_matrix_split[2] = RGB_MATRIX_SPLIT;
 #endif
 
 /* ===== 按键事件 position → (row, col) 反向映射 (供反应式灯效使用) =====
- * 优先使用用户自定义配置，其次从设备树转换，都没有则 #error 报错 */
+ * 映射宏 RGB_MATRIX_POS_TO_RC_LEN / RGB_MATRIX_POS_TO_RC_MAP 由 post_config.h 生成 */
 #if defined(RGB_MATRIX_KEYREACTIVE_ENABLED) || \
 	(defined(RGB_MATRIX_FRAMEBUFFER_EFFECTS) && defined(ENABLE_RGB_MATRIX_TYPING_HEATMAP))
-
-#	ifdef RGB_MATRIX_POS_TO_RC_MAP
-#		ifndef RGB_MATRIX_POS_TO_RC_LEN
-#			define RGB_MATRIX_POS_TO_RC_LEN (MATRIX_ROWS * MATRIX_COLS)
-#		endif
 static const struct
 {
 	uint8_t row;
 	uint8_t col;
 } zmk_rgb_pos_to_rc[RGB_MATRIX_POS_TO_RC_LEN] = RGB_MATRIX_POS_TO_RC_MAP;
-#		define ZMK_RGB_POS_TO_RC_LEN RGB_MATRIX_POS_TO_RC_LEN
-#	elif DT_HAS_CHOSEN(zmk_matrix_transform)
-/* 从设备树 matrix-transform 的 map 属性编译期生成反查表 */
-#		define ZMK_RGB_MT_NODE DT_CHOSEN(zmk_matrix_transform)
-#		define ZMK_RGB_MT_LEN DT_PROP_LEN(ZMK_RGB_MT_NODE, map)
-#		define ZMK_RGB_POS_RC_ENTRY(idx, _)                              \
-			{ (uint8_t)KT_ROW(DT_PROP_BY_IDX(ZMK_RGB_MT_NODE, map, idx)), \
-			  (uint8_t)KT_COL(DT_PROP_BY_IDX(ZMK_RGB_MT_NODE, map, idx)) }
-static const struct
-{
-	uint8_t row;
-	uint8_t col;
-} zmk_rgb_pos_to_rc[ZMK_RGB_MT_LEN] = {
-	LISTIFY(ZMK_RGB_MT_LEN, ZMK_RGB_POS_RC_ENTRY, (, ), 0)
-};
-#		define ZMK_RGB_POS_TO_RC_LEN ZMK_RGB_MT_LEN
-#	else
-#		error "启用反应式/帧缓冲灯效需要 position→(row,col) 映射: \
-请在 config.h 中定义 RGB_MATRIX_POS_TO_RC_MAP (和可选的 RGB_MATRIX_POS_TO_RC_LEN)， \
-或在设备树中配置 zmk,matrix-transform。"
-#	endif
 
 static bool rgb_matrix_position_to_rc(uint32_t position, uint8_t* row, uint8_t* col)
 {
-	if(position >= ZMK_RGB_POS_TO_RC_LEN) return false;
+	if(position >= RGB_MATRIX_POS_TO_RC_LEN) return false;
 	*row = zmk_rgb_pos_to_rc[position].row;
 	*col = zmk_rgb_pos_to_rc[position].col;
 	return true;

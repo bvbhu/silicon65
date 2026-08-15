@@ -153,15 +153,10 @@
 #define ENABLE_RGB_MATRIX_STARLIGHT_SMOOTH
 #define ENABLE_RGB_MATRIX_RIVERFLOW
 
-/* ===== 反应式/帧缓冲灯效的 position→(row,col) 映射 =====
- * 反应式灯效 (SOLID_REACTIVE 系列或 SPLASH 系列) 与帧缓冲灯效 (TYPING_HEATMAP/DIGITAL_RAIN)
- * 需要将 ZMK 的 keymap position 转换为物理 (row, col)，转换表来源优先级：
- * 数组长度由 RGB_MATRIX_POS_TO_RC_LEN 指定；未定义时默认 MATRIX_ROWS * MATRIX_COLS。
- * 注意：数组长度必须 >= keymap 实际 position 数量，否则超出范围的按键事件会被丢弃。 */
-// #define RGB_MATRIX_POS_TO_RC_MAP { {0,0}, {0,1}, {1,0}, ... }
-// #define RGB_MATRIX_POS_TO_RC_LEN 75
+/* 以下灯效需要将 ZMK 的 keymap position 转换为物理 (row, col)。
+ * 映射表由设备树 zmk,matrix-transform 的 map 属性自动生成，若无法生成会自动禁用灯效。 */
 
-// /* ===== 反应式灯效 ===== */
+/* ===== 反应式灯效 ===== */
 #define ENABLE_RGB_MATRIX_SOLID_REACTIVE_SIMPLE
 #define ENABLE_RGB_MATRIX_SOLID_REACTIVE
 #define ENABLE_RGB_MATRIX_SOLID_REACTIVE_WIDE
@@ -174,6 +169,6 @@
 #define ENABLE_RGB_MATRIX_MULTISPLASH
 #define ENABLE_RGB_MATRIX_SOLID_SPLASH
 #define ENABLE_RGB_MATRIX_SOLID_MULTISPLASH
-// /* ===== 帧缓冲灯效 ===== */
+/* ===== 帧缓冲灯效 ===== */
 #define ENABLE_RGB_MATRIX_TYPING_HEATMAP // 这同时是反应式灯效和帧缓冲灯效
 #define ENABLE_RGB_MATRIX_DIGITAL_RAIN
