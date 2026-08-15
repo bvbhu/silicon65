@@ -623,7 +623,8 @@ int rgb_matrix_controller_init(void)
 	rgb_matrix_init();
 
 #if defined(RGB_WORKQ_STACK_SIZE) && RGB_WORKQ_STACK_SIZE > 0
-	k_work_q_start(&rgb_work_q, rgb_work_q_stack,  K_THREAD_STACK_SIZEOF(rgb_work_q_stack), RGB_WORKQ_PRIORITY);
+	/* k_work_q_start 在 Zephyr 3.1 起重命名为 k_work_queue_start，并新增 cfg 参数 */
+	k_work_queue_start(&rgb_work_q, rgb_work_q_stack, K_THREAD_STACK_SIZEOF(rgb_work_q_stack), RGB_WORKQ_PRIORITY, NULL);
 #endif
 
 	k_timer_start(&rgb_timer, K_MSEC(RGB_MATRIX_LED_FLUSH_LIMIT), K_MSEC(RGB_MATRIX_LED_FLUSH_LIMIT));
