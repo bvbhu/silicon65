@@ -153,10 +153,11 @@
 #define ENABLE_RGB_MATRIX_STARLIGHT_SMOOTH
 #define ENABLE_RGB_MATRIX_RIVERFLOW
 
-/* 以下灯效需要将 ZMK 的 keymap position 转换为物理 (row, col)。
- * 映射表由设备树 zmk,matrix-transform 的 map 属性自动生成，若无法生成会自动禁用灯效。 */
+/* 以下灯效需要额外的RAM空间。
+ * 以下灯效需要将 ZMK 的 keymap position 转换为物理 (row, col)，
+ * 映射表由设备树 zmk,matrix-transform 的 map 属性自动生成，若无法生成会自动禁用以下灯效。 */
 
-/* ===== 反应式灯效 ===== */
+ /* ===== 反应式灯效 ===== */
 #define ENABLE_RGB_MATRIX_SOLID_REACTIVE_SIMPLE
 #define ENABLE_RGB_MATRIX_SOLID_REACTIVE
 #define ENABLE_RGB_MATRIX_SOLID_REACTIVE_WIDE
