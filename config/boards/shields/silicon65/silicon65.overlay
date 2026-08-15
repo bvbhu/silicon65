@@ -17,7 +17,10 @@
 		zephyr,settings-storage = &storage_partition;
 	};  
 
-  ext_power: ext-power {
+  /* 节点名须为 EXT_POWER：行为层 device_get_binding("EXT_POWER") 按设备名查找
+   * （Zephyr 无 label 时设备名取节点全名）；不能用 ext_power: 标签，会与
+   * ZMK 内置 /behaviors/extpower 节点的 ext_power 标签冲突 */
+  EXT_POWER {
         compatible = "zmk,ext-power-generic";
         control-gpios = <&gpio1 9 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>; // DCDC使能引脚
         init-delay-ms = <100>;
