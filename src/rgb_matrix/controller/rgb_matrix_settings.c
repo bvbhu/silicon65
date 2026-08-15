@@ -6,8 +6,9 @@
  * 监听 &rgb_ug 键码，修改灯光设置，并通过 ZMK settings 子系统持久化配置。
  */
 
-#include "rgb_matrix.h"
 #include "lib8tion.h"
+#include "rgb_matrix.h"
+
 
 #include <string.h>
 #include <zephyr/device.h>
@@ -32,8 +33,15 @@ static struct k_work_delayable rgb_matrix_save_work;
 static void rgb_matrix_save_handler(struct k_work* work)
 {
 	(void)work;
+
 	uint64_t raw = rgb_matrix_config.raw;
-	int err = settings_save_one(RGB_MATRIX_SETTINGS_KEY, &raw, sizeof(raw));
+
+	int err = settings_save_one(
+		RGB_MATRIX_SETTINGS_KEY,
+		&raw,
+		sizeof(raw)
+	);
+
 	if(err)
 	{
 		LOG_ERR("RGB matrix settings save failed (%d)", err);
@@ -48,17 +56,14 @@ void rgb_matrix_settings_save(void)
 
 static int rgb_matrix_settings_set(const char* name, size_t len, settings_read_cb read_cb, void* cb_arg)
 {
+	(void)len; /* NVS 后端只传 1 字节哨兵值，不代表真实数据长度 */
+
 	if(strcmp(name, "state") != 0)
 	{
 		return -ENOENT;
 	}
 
 	uint64_t raw;
-	if(len != sizeof(raw))
-	{
-		return -EINVAL;
-	}
-
 	ssize_t read_len = read_cb(cb_arg, &raw, sizeof(raw));
 	if(read_len != sizeof(raw))
 	{
@@ -68,6 +73,15 @@ static int rgb_matrix_settings_set(const char* name, size_t len, settings_read_c
 	rgb_matrix_config.raw = raw;
 	settings_loaded = true;
 	return 0;
+}
+
+static int rgb_matrix_settings_export(int (*cb)(const char* name,
+												const void* value,
+												size_t val_len))
+{
+	uint64_t raw = rgb_matrix_config.raw;
+
+	return cb("state", &raw, sizeof(raw));
 }
 
 static int rgb_matrix_settings_commit(void)
@@ -82,10 +96,10 @@ static int rgb_matrix_settings_commit(void)
 }
 
 SETTINGS_STATIC_HANDLER_DEFINE(rgb_matrix, "rgb_matrix",
-							   NULL,					   /* h_get */
-							   rgb_matrix_settings_set,	   /* h_set */
-							   rgb_matrix_settings_commit, /* h_commit */
-							   NULL);					   /* h_export */
+							   NULL,						/* h_get */
+							   rgb_matrix_settings_set,		/* h_set */
+							   rgb_matrix_settings_commit,	/* h_commit */
+							   rgb_matrix_settings_export); /* h_export */
 
 /* 初始化 settings 延迟保存工作项 */
 void rgb_matrix_settings_init(void)

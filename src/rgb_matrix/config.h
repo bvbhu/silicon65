@@ -87,6 +87,12 @@
  *    LED_FLAG_INDICATOR = 0x08  — 指示灯 */
 #define RGB_MATRIX_DEFAULT_FLAGS LED_FLAG_ALL
 
+/** @brief 有线（USB）模式下 RGB 自动关闭控制
+ *  定义后：有线模式下不因空闲自动关闭 RGB（插电无需省电），
+ *  无线（BLE）模式仍按 CONFIG_ZMK_IDLE_TIMEOUT 空闲自动关闭。
+ *  不定义：有线和无线模式都按 CONFIG_ZMK_IDLE_TIMEOUT 自动关闭（默认行为）。 */
+#define RGB_MATRIX_KEEP_ON_WIRED
+
 /* ===== 默认灯效设置 ===== */
 /* 这些值在键盘启动且无有效持久化配置时使用 */
 /** @brief 默认 HSV 颜色值

@@ -458,10 +458,32 @@ void rgb_matrix_task(void)
 
 	// Ideally we would also stop sending zeros to the LED driver PWM buffers
 	// while suspended and just do a software shutdown. This is a cheap hack for now.
-	bool suspend_backlight = suspend_state ||
-							 (zmk_activity_get_state() == ZMK_ACTIVITY_IDLE);
+	bool rgb_idle_off = false;
+	static bool prev_idle_off = false;
+#if CONFIG_ZMK_IDLE_TIMEOUT > 0
+	/* 有线模式下是否自动关闭 RGB：
+	 * 定义 RGB_MATRIX_KEEP_ON_WIRED 后，有线（USB）模式不自动关闭，
+	 * 无线（BLE）模式仍按空闲超时关闭；不定义则有线/无线均按空闲超时关闭。 */
+#if defined(RGB_MATRIX_KEEP_ON_WIRED)
+	bool keep_on_wired = zmk_usb_is_powered();
+#else
+	bool keep_on_wired = false;
+#endif
+	if(!keep_on_wired && zmk_activity_get_state() == ZMK_ACTIVITY_IDLE)
+	{
+		rgb_idle_off = true;
+	}
+#endif
 
-	uint8_t effect = suspend_backlight || !rgb_matrix_config.enable ? 0 : rgb_matrix_config.mode;
+	/* 空闲状态变化时强制重启状态机，确保灯效正确初始化，
+	 * 避免从空闲切换回活跃时因状态机停留在 SYNCING 导致灯效卡死。 */
+	if(rgb_idle_off != prev_idle_off)
+	{
+		rgb_task_state = STARTING;
+	}
+	prev_idle_off = rgb_idle_off;
+
+	uint8_t effect = rgb_matrix_config.enable && !rgb_idle_off ? rgb_matrix_config.mode : RGB_MATRIX_NONE;
 
 	switch(rgb_task_state)
 	{
@@ -577,7 +599,7 @@ static void rgb_tick_handler(struct k_work* work)
 K_WORK_DEFINE(rgb_tick_work, rgb_tick_handler);
 
 #if defined(RGB_WORKQ_STACK_SIZE) && RGB_WORKQ_STACK_SIZE > 0
-#define RGB_WORKQ_PRIORITY (CONFIG_MAIN_THREAD_PRIORITY + 1)
+#	define RGB_WORKQ_PRIORITY (CONFIG_MAIN_THREAD_PRIORITY + 1)
 static struct k_work_q rgb_work_q;
 K_THREAD_STACK_DEFINE(rgb_work_q_stack, RGB_WORKQ_STACK_SIZE);
 #endif
@@ -588,7 +610,7 @@ static void rgb_timer_handler(struct k_timer* timer)
 #if defined(RGB_WORKQ_STACK_SIZE) && RGB_WORKQ_STACK_SIZE > 0
 	k_work_submit_to_queue(&rgb_work_q, &rgb_tick_work); /* 独立 workqueue */
 #else
-	k_work_submit(&rgb_tick_work);			 /* 系统 workqueue（省 RAM） */
+	k_work_submit(&rgb_tick_work); /* 系统 workqueue（省 RAM） */
 #endif
 }
 
@@ -599,11 +621,13 @@ int rgb_matrix_controller_init(void)
 {
 	rgb_matrix_settings_init();
 	rgb_matrix_init();
+
 #if defined(RGB_WORKQ_STACK_SIZE) && RGB_WORKQ_STACK_SIZE > 0
-	k_work_q_start(&rgb_work_q, rgb_work_q_stack,
-				   K_THREAD_STACK_SIZEOF(rgb_work_q_stack), RGB_WORKQ_PRIORITY);
+	k_work_q_start(&rgb_work_q, rgb_work_q_stack,  K_THREAD_STACK_SIZEOF(rgb_work_q_stack), RGB_WORKQ_PRIORITY);
 #endif
+
 	k_timer_start(&rgb_timer, K_MSEC(RGB_MATRIX_LED_FLUSH_LIMIT), K_MSEC(RGB_MATRIX_LED_FLUSH_LIMIT));
+
 	LOG_INF("RGB matrix controller initialized");
 	return 0;
 }
