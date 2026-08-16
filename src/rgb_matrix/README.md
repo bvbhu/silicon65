@@ -1,14 +1,17 @@
 # RGB Matrix — Silicon65
 
-使用自定义 RGB 控制器（`controller/`）取代 ZMK 内置 `rgb_underglow`，复刻 QMK RGB Matrix 功能。
-监听 `&rgb_ug` 键码实现灯光控制，按下 Shift 可反向调整。
+使用自定义 RGB 控制器（`controller/`）取代 ZMK 内置 `rgb_underglow`，复刻 QMK RGB Matrix 功能。监听 `&rgb_ug` 键码实现灯光控制，按下 Shift 可反向调整。
+
+支持全部 QMK RGB Matrix 灯效（含反应式与帧缓冲灯效），通过键码 `RGB_EFF` / `RGB_EFR` 循环切换。亮度范围 0–225（0%~88%），以 33ms 间隔刷新。
 
 ## 功能介绍
 
-- 支持 QMK RGB Matrix 灯效体系，通过 `RGB_EFF` / `RGB_EFR` 键码循环切换
-- 亮度范围 0–225，刷新间隔 33ms
-- 配置状态（灯效模式、HSV、速度、开关）通过 ZMK Settings 持久化到 flash
-- 空闲/断开 USB 时可自动关闭灯效（由 Kconfig 控制）
+- **灯效体系**：复刻 QMK RGB Matrix，`config.h` 中默认启用全部灯效。
+- **渲染调度**：状态机 `STARTING → RENDERING → FLUSHING → SYNCING`，可用独立 workqueue 渲染（避免阻塞按键）。
+- **按键事件**：反应式 / 帧缓冲灯效通过事件监听器接入按键，position 映射由设备树自动生成。
+- **指示灯**：`rgb_matrix_indicators_advanced_user` 支持 Caps / Num / Scroll / Shift / Ctrl / GUI / Alt / 层指示。
+- **持久化**：灯效模式、HSV、速度、开关状态写入 flash。
+- **自动熄灯**：空闲自动关闭 LED，可配置有线模式常亮（`RGB_MATRIX_KEEP_ON_WIRED`）。
 
 ## 硬件参数
 
@@ -27,22 +30,25 @@
 
 ### config.h
 
-| 宏                               | 值                             | 说明        |
-| ------------------------------- | ----------------------------- | --------- |
-| `MATRIX_ROWS`                   | 5                             | 矩阵行数      |
-| `MATRIX_COLS`                   | 15                            | 矩阵列数      |
-| `RGB_MATRIX_LED_COUNT`          | 69                            | LED 总数    |
-| `RGB_MATRIX_CENTER`             | {112, 32}                     | 灯效中心坐标    |
-| `RGB_MATRIX_LED_FLUSH_LIMIT`    | 33                            | 刷新间隔 (ms) |
-| `RGB_MATRIX_HUE_STEP`           | 8                             | 色相步进      |
-| `RGB_MATRIX_SAT_STEP`           | 16                            | 饱和度步进     |
-| `RGB_MATRIX_VAL_STEP`           | 16                            | 明度步进      |
-| `RGB_MATRIX_SPD_STEP`           | 16                            | 速度步进      |
-| `RGB_MATRIX_MAXIMUM_BRIGHTNESS` | 225                           | 最大亮度上限    |
-| `RGB_MATRIX_DEFAULT_HSV`        | 170, 255, 200                 | 默认颜色      |
-| `RGB_MATRIX_DEFAULT_SPD`        | 127                           | 默认速度      |
-| `RGB_MATRIX_DEFAULT_ON`         | true                          | 开机默认开启    |
-| `RGB_MATRIX_DEFAULT_MODE`       | `RGB_MATRIX_CYCLE_LEFT_RIGHT` | 默认灯效      |
+| 宏                               | 值                             | 说明                 |
+| ------------------------------- | ----------------------------- | ------------------ |
+| `MATRIX_ROWS`                   | 5                             | 矩阵行数               |
+| `MATRIX_COLS`                   | 15                            | 矩阵列数               |
+| `RGB_MATRIX_LED_COUNT`          | 69                            | LED 总数             |
+| `RGB_MATRIX_CENTER`             | {112, 32}                     | 灯效中心坐标             |
+| `RGB_MATRIX_LED_FLUSH_LIMIT`    | 33                            | 刷新间隔 (ms)          |
+| `RGB_MATRIX_HUE_STEP`           | 8                             | 色相步进               |
+| `RGB_MATRIX_SAT_STEP`           | 16                            | 饱和度步进              |
+| `RGB_MATRIX_VAL_STEP`           | 16                            | 明度步进               |
+| `RGB_MATRIX_SPD_STEP`           | 16                            | 速度步进               |
+| `RGB_MATRIX_MAXIMUM_BRIGHTNESS` | 225                           | 最大亮度上限             |
+| `RGB_MATRIX_DEFAULT_HSV`        | 170, 255, 200                 | 默认颜色               |
+| `RGB_MATRIX_DEFAULT_SPD`        | 127                           | 默认速度               |
+| `RGB_MATRIX_DEFAULT_ON`         | true                          | 开机默认开启             |
+| `RGB_MATRIX_DEFAULT_MODE`       | `RGB_MATRIX_CYCLE_LEFT_RIGHT` | 默认灯效               |
+| `RGB_MATRIX_DEFAULT_FLAGS`      | `LED_FLAG_ALL`                | 默认 LED 标志          |
+| `RGB_WORKQ_STACK_SIZE`          | 1024                          | 独立 workqueue 栈      |
+| `RGB_MATRIX_KEEP_ON_WIRED`      | 定义                           | 有线模式空闲不熄灯          |
 
 **启用的灯效（全部开启）：**
 
@@ -52,8 +58,10 @@
 
 ### keymap.c
 
-- `g_led_config` — LED 灯珠布局，共 69 颗 LED，格式与 QMK 完全兼容
+- `g_led_config` — LED 灯珠布局，共 69 颗 LED，格式与 QMK 完全兼容，声明为 `const` 存入 flash
 - `rgb_matrix_indicators_advanced_user` — 未实现（已注释）
+
+> 反应式/帧缓冲灯效的 position → (row, col) 映射表由设备树 `zmk,matrix-transform` 自动生成，无需手动维护。
 
 ### silicon65.conf
 
@@ -90,4 +98,3 @@ src/rgb_matrix/
     ├── runners/          # 灯效运行器
     └── *.h               # 各灯效实现
 ```
-

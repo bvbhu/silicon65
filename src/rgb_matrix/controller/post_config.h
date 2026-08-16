@@ -32,7 +32,7 @@
 #    define RGB_MATRIX_KEYPRESSES
 #endif
 
-/* ===== position→(row,col) 映射宏 (供反应式/帧缓冲灯效使用) =====*/
+/* ===== position→(row,col) 映射宏 (供反应式/帧缓冲灯效使用) ===== */
 #if defined(RGB_MATRIX_KEYPRESSES) || defined(RGB_MATRIX_KEYRELEASES) || \
     (defined(RGB_MATRIX_FRAMEBUFFER_EFFECTS) && defined(ENABLE_RGB_MATRIX_TYPING_HEATMAP))
 #    if !DT_HAS_CHOSEN(zmk_matrix_transform)

@@ -11,7 +11,6 @@
 
 #include <dt-bindings/zmk/modifiers.h>
 #include <stdint.h>
-#include <zephyr/kernel.h>
 #include <zmk/hid.h>
 #include <zmk/hid_indicators.h>
 #include <zmk/keymap.h>
