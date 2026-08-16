@@ -51,7 +51,7 @@
 /** @brief LED 坐标系中心点
  *  用于对称灯效（如 Cycle Left-Right）的中心参考坐标。
  *  可选值: { x, y }，x/y 范围 0~255 */
-#define RGB_MATRIX_CENTER { 112, 32 }
+#define RGB_MATRIX_CENTER { 108, 32 }
 
 /* ===== 步进值（键控调整增量） ===== */
 
