@@ -1,11 +1,13 @@
 /*
  * Copyright (c) 2026 bvbhu
- * SPDX-License-Identifier: MIT
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
- * 键盘自定义配置（QMK 风格 keymap.c）
- * g_led_config 可从 QMK 直接迁移，无需修改。
+ * Silicon65 LED 布局配置
+ * 通过 snippet 注入模块编译。
  */
-#include "controller/rgb_matrix.h"
+
+#include <rgb_matrix.h>
+
 // clang-format off
 led_config_t g_led_config =
 {
@@ -16,60 +18,28 @@ led_config_t g_led_config =
         {     24, NO_LED,     23,     22,     21,     20,     19,     18,     17,     16,     15,     14,     13,     12,     11 },
         {      0,      1,      2,      3, NO_LED, NO_LED,      4, NO_LED, NO_LED,      5,      6,      7,      8,      9,     10 }
     },
-    // LED Index to Physical Position (按 LED 索引 0..68 顺序排列，
-    // LED 条蛇形走线：Row4(0-10) → Row3(11-24) → Row2(25-38) → Row1(39-53) → Row0(54-68))
     {
-        // LED 0-10: Row 4 (11 keys)
-        { 8.75,64}, {26.25,64}, {43.75,64}, {70.00,64}, { 96.25,64}, {122.50,64}, {148.75,64}, {166.25,64}, {189.00,64}, {203.00,64}, {217.00,64},
-        // LED 11-24: Row 3 (14 keys, right-to-left)
+        {  8.75,64}, {26.25,64}, {43.75,64}, {70.00,64}, { 96.25,64}, {122.50,64}, {148.75,64}, {166.25,64}, {189.00,64}, {203.00,64}, {217.00,64},
         {217.00,48}, {203.00,48}, {183.75,48}, {164.50,48}, {150.50,48}, {136.50,48}, {122.50,48}, {108.50,48}, { 94.50,48}, { 80.50,48}, { 66.50,48}, { 52.50,48}, { 38.50,48}, { 15.75,48},
-        // LED 25-38: Row 2 (14 keys, left-to-right)
         { 12.25,32}, { 31.50,32}, { 45.50,32}, { 59.50,32}, { 73.50,32}, { 87.50,32}, {101.50,32}, {115.50,32}, {129.50,32}, {143.50,32}, {157.50,32}, {171.50,32}, {194.25,32}, {217.00,32},
-        // LED 39-53: Row 1 (15 keys, right-to-left)
         {217.00,16}, {199.50,16}, {182.00,16}, {168.00,16}, {154.00,16}, {140.00,16}, {126.00,16}, {112.00,16}, { 98.00,16}, { 84.00,16}, { 70.00,16}, { 56.00,16}, { 42.00,16}, { 28.00,16}, { 10.50,16},
-        // LED 54-68: Row 0 (15 keys, left-to-right)
         {  7.00, 0}, { 21.00, 0}, { 35.00, 0}, { 49.00, 0}, { 63.00, 0}, { 77.00, 0}, { 91.00, 0}, {105.00, 0}, {119.00, 0}, {133.00, 0}, {147.00, 0}, {161.00, 0}, {175.00, 0}, {196.00, 0}, {217.00, 0},
     },
     {
-        // LED 0-10: all KEYLIGHT
         4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
-        // LED 11-24: all KEYLIGHT
         4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
-        // LED 25 = CapsLock 指示灯(INDICATOR=8), 其余 KEYLIGHT
         8, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
-        // LED 39-53: all KEYLIGHT
         4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
-        // LED 54-68: all KEYLIGHT
         4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4
     }
 };
 // clang-format on
+
 bool rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max)
 {
-	if(host_keyboard_led_state().caps_lock)
-	{ // CapsLock锁定时强制25号LED的颜色
-		RGB_MATRIX_INDICATOR_SET_COLOR(25, 185, 0, 0);
-	}
-	// else
-	// { // CapsLock解锁时强制25号LED的颜色
-	// }
-
-	// if(host_keyboard_led_state().num_lock)
-	// { // NumLock锁定时强制45号LED的颜色
-	// }
-	// else
-	// { // NumLock解锁时强制45号LED的颜色
-	// 	RGB_MATRIX_INDICATOR_SET_COLOR(45, 185, 0, 0);
-	// }
-
-	// switch(get_highest_layer(layer_state))
-	// {
-	// 	case 0:
-	// 		break;
-	// 	case 1:
-	// 		break;
-	// 	default:
-	// 		break;
-	// }
-	return false;
+    if(host_keyboard_led_state().caps_lock)
+    {
+        RGB_MATRIX_INDICATOR_SET_COLOR(25, 185, 0, 0);
+    }
+    return false;
 }
