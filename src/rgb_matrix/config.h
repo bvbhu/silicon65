@@ -41,7 +41,7 @@
 
 /** @brief LED 刷新间隔阈值（毫秒）
  *  可选值: 1 ~ 100（毫秒） */
-#define RGB_MATRIX_LED_FLUSH_LIMIT 33
+#define RGB_MATRIX_LED_FLUSH_LIMIT 16
 
 /** @brief RGB 独立 workqueue 栈大小（字节）
  *  定义 > 0 使用独立 workqueue（避免阻塞按键），值即线程栈大小。
