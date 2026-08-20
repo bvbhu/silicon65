@@ -1,6 +1,6 @@
 include:
   - board: nrfmicro_13
     shield: silicon65
-    
+
   - board: nrfmicro_13
     shield: settings_reset
